@@ -8,7 +8,7 @@ type ConfigurationServer interface {
     SetSetting(path string, value string)
 }
 
-type TreeConfiguration struct {
+type ConfigurationTree struct {
     Prefix string
     SubtreeHandlers map[string]ConfigurationServer
 }
