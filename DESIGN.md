@@ -1,12 +1,10 @@
 # Design of the **sysconfs** file server
-
-**sysconfs** is a synthetic Unix-like filesystem that provides a high-level,
+**sysconfs** is a synthetic Unix filesystem that provides a high-level,
 abstract, object- and configuration-oriented representation of the state of all
 software on a machine (be it physical or virtual), and supports doing this for
 multiple machines simultaneously.
 
 ## Requirements
-
 * a Unix-like OS on the admin machine (on which the filesystem is mounted)
 * FUSE (for Linux/*BSD)
 * golang
@@ -29,19 +27,19 @@ physical file system (aka configuration files) as well as runtime configuration
 as a filesystem).
 
 ## Structure
-
-The filesystem is structured as follows:
-(**Note**: *node* is a hostname or IP address of the target machine.)
+The basic (and stable) filesystem hierarchy is structured as follows:
 
 * / - root node
-* /*node* - hostname
+* /conf - sysconfs current filesystem configuration
+* /*node* - hostname or IP address of the target machine
 * /*node*/conf - persistent configuration
 * /*node*/conf/sys - persistent system configuration
-* /*node*/conf/*pkgname* - software package configuration
+* /*node*/conf/*pkgname* - persistent software configuration for package *pkgname*
 * /*node*/run - runtime configuration
 * /*node*/run/sys - runtime system configuration
-* /*node*/run
+* /*node*/run/*pkgname* - runtime software configuration for package *pkgname*
 
-## API
+The configuration for `sys` and *`pkgname`* nodes depends on the particular
+configuration server implementation.
 
-The API can be described
+## 
