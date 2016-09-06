@@ -16,6 +16,8 @@ type Setting struct {
 
 type ConfigurationServer interface {
 	GetConfiguration() Configuration
+	AppendToConfiguration(conf Configuration)
+	SetConfiguration(conf Configuration)
 	GetSetting(path string) (*Setting, error)
 	SetSetting(path string, value *Setting) error
 }
@@ -58,15 +60,27 @@ func (nne *NonexistentNodeError) Error() string {
 }
 
 func (ct *ConfigurationTree) GetConfiguration() Configuration {
-	mergedConf := make(Configuration)
+	conf := make(Configuration)
+	ct.AppendToConfiguration(conf)
+	return conf
+}
 
+func (ct *ConfigurationTree) AppendToConfiguration(conf Configuration) {
 	for prefix, handler := range ct.SubtreeHandlers {
 		for path, value := range handler.GetConfiguration() {
-			mergedConf[fmt.Sprintf("%s/%s", prefix, path)] = value
+			conf[fmt.Sprintf("%s/%s", prefix, path)] = value
 		}
 	}
+}
 
-	return mergedConf
+func (ct *ConfigurationTree) SetConfiguration(conf Configuration) (err error) {
+	for path, value := range conf {
+		err = ct.SetSetting(path, value)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func (ct *ConfigurationTree) GetSetting(path string) (value *Setting, err error) {
