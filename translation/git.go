@@ -107,9 +107,8 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 	return
 }
 
-func (gr *GitRepository) DiffReference(ref *git2go.Reference) (diff *git2go.Diff, err error) {
-	diff, err = gr.DiffTreeToWorkdirWithIndex(ref.Target(), nil)
-	return
+func (gr *GitRepository) DiffReference(ref *git2go.Reference) (*git2go.Diff, error) {
+	return gr.DiffTreeToWorkdirWithIndex(ref.Target(), nil)
 }
 
 func (gr *GitRepository) DiffRemote(ref *git2go.Reference, remoteName string) (translatedDiff <-chan Delta, err error) {
@@ -122,7 +121,7 @@ func (gr *GitRepository) DiffRemote(ref *git2go.Reference, remoteName string) (t
 	defer close(diff)
 	deltaCollector := func(delta git2go.DiffDelta, _ float64) (git2go.DiffForEachHunkCallback, error) {
 		diff <- delta
-		return nil, nil
+		return
 	}
 	err = diff.ForEach(deltaCollector, git2go.DiffDetailFiles)
 	if err != nil {
