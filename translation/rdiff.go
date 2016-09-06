@@ -24,12 +24,12 @@ type Session struct {
 	Command string
 }
 
-type Changer interface {
+type Variant interface {
 	Diff(target io.ReadSeeker) (<-chan Delta, error)
-	Patch(target io.WriteCloser, diff <-chan Delta) error
+	Patch(target io.WriteCloser, patch <-chan Delta) error
 }
 
 type Translator interface {
-	TranslateToRdiff(diff chan<- Delta) (translatedDiff <-chan Delta, err error)
-	TranslateToRexec(diff chan<- Delta) (session *Session, err error)
+	TranslateRdiff(rdiff chan<- Delta) (translatedRdiff <-chan Delta, err error)
+	TranslateRdiffToRexec(rdiff chan<- Delta) (session *Session, err error)
 }
