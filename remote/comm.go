@@ -1,11 +1,20 @@
 package remote
 
-type Protocol int
+type DeltaProtocol int
 
 const (
-	LocalFilesystem Protocol = iota
-	SSH
+	None Protocol = iota
+	FUSE
 	Rsync
+	Git
+)
+
+type TargetProtocol int
+
+const (
+	None TargetProtocol = iota
+	SSH
+	Gonflated
 )
 
 type Socket struct {
