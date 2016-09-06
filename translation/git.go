@@ -26,18 +26,17 @@ type GitRepository struct {
 }
 
 func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan Delta, err error) {
-	deltas := make(chan Delta, chanCap)
+	rdiff = make(chan Delta, chanCap)
 
 	go func() {
 		defer func() {
-			close(deltas)
-			rdiff = deltas
+			close(rdiff)
 		}()
 
 		for delta := range diff {
 			switch delta.Status {
 			case git2go.DeltaUnmodified:
-				deltas <- &Delta{
+				rdiff <- &Delta{
 					NewPath: delta.NewFile.Path,
 					Type:    DeltaUnmodified,
 				}
@@ -47,13 +46,13 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 					return
 				}
 
-				deltas <- &Delta{
+				rdiff <- &Delta{
 					Operation: &rsync.Operation{Data: blob.Contents()},
 					NewPath:   delta.NewFile.Path,
 					Type:      DeltaAdded,
 				}
 			case git2go.DeltaDeleted:
-				deltas <- &Delta{
+				rdiff <- &Delta{
 					OldPath: delta.OldFile.Path,
 					Type:    DeltaDeleted,
 				}
@@ -81,7 +80,7 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 				}
 
 				err = rsync.CreateDelta(newReader, signature, func(op Operation) error {
-					deltas <- &Delta{
+					rdiff <- &Delta{
 						Operation: op,
 						OldPath:   delta.OldFile.Path,
 						NewPath:   delta.NewFile.Path,
@@ -90,13 +89,13 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 					return nil
 				})
 			case git2go.DeltaRenamed:
-				deltas <- &Delta{
+				rdiff <- &Delta{
 					OldPath: delta.OldFile.Path,
 					NewPath: delta.NewFile.Path,
 					Type:    DeltaRenamed,
 				}
 			case git2go.DeltaCopied:
-				deltas <- &Delta{
+				rdiff <- &Delta{
 					OldPath: delta.OldFile.Path,
 					Path:    delta.NewFile.Path,
 					Type:    DeltaCopied,
@@ -114,15 +113,15 @@ func (gr *GitRepository) DiffReference(ref *git2go.Reference) (diff *git2go.Diff
 }
 
 func (gr *GitRepository) DiffRemote(ref *git2go.Reference, remoteName string) (translatedDiff <-chan Delta, err error) {
-	diff, err := gr.DiffReference(ref)
+	gitDiff, err := gr.DiffReference(ref)
 	if err != nil {
 		return
 	}
 
-	deltas := make(chan git2go.DiffDelta, chanCap)
-	defer close(deltas)
+	diff := make(chan git2go.DiffDelta, chanCap)
+	defer close(diff)
 	deltaCollector := func(delta git2go.DiffDelta, _ float64) (git2go.DiffForEachHunkCallback, error) {
-		deltas <- delta
+		diff <- delta
 		return nil, nil
 	}
 	err = diff.ForEach(deltaCollector, git2go.DiffDetailFiles)
@@ -136,7 +135,7 @@ func (gr *GitRepository) DiffRemote(ref *git2go.Reference, remoteName string) (t
 	}
 
 	comm := remote.DialURL(remote.URL, remote.Protocol)
-	return gr.GetRdiff(deltas)
+	return gr.GetRdiff(rdiff)
 }
 
 func (src *SyntheticRemoteCollection) Add(name string, rawurl string, proto remote.Protocol) (err error) {
