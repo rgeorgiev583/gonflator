@@ -52,7 +52,7 @@ func DialSSH(addr string, username string, keyFilename string) (conn *SSHConn, e
 	return
 }
 
-func (conn *SSHConn) Send(message string, endpoints *Socket) (err error) {
+func (conn *SSHConn) Send(cmd string, endpoints *Socket) (err error) {
 	session, err := conn.NewSession()
 	defer session.Close()
 	if err != nil {
@@ -77,5 +77,5 @@ func (conn *SSHConn) Send(message string, endpoints *Socket) (err error) {
 	}
 	go io.Copy(endpoints.Stderr, stderr)
 
-	return session.Run(name)
+	return session.Run(cmd)
 }
