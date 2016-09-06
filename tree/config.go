@@ -10,8 +10,8 @@ import (
 type Configuration map[string]Setting
 
 type Setting struct {
-	key   string
-	value []byte
+	Key   string
+	Value []byte
 }
 
 type ConfigurationServer interface {
