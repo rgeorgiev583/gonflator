@@ -29,9 +29,7 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 	rdiff = make(chan Delta, chanCap)
 
 	go func() {
-		defer func() {
-			close(rdiff)
-		}()
+		defer close(rdiff)
 
 		for delta := range diff {
 			switch delta.Status {
