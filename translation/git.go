@@ -137,7 +137,7 @@ func (gr *GitRepository) DiffRemote(ref *git2go.Reference, remoteName string) (t
 	return gr.GetRdiff(rdiff)
 }
 
-func (src *SyntheticRemoteCollection) Add(name string, rawurl string, proto remote.Protocol) (err error) {
+func (gr *GitRepository) Add(name string, rawurl string, proto remote.Protocol) (err error) {
 	url, err := url.Parse(rawurl)
 	if err != nil {
 		return
