@@ -16,8 +16,8 @@ type Setting struct {
 
 type ConfigurationServer interface {
 	GetConfiguration() Configuration
-	GetSetting(path string) (string, error)
-	SetSetting(path string, value []byte) error
+	GetSetting(path string) (*Setting, error)
+	SetSetting(path string, value *Setting) error
 }
 
 type ConfigurationTree struct {
@@ -69,7 +69,7 @@ func (ct *ConfigurationTree) GetConfiguration() Configuration {
 	return mergedConf
 }
 
-func (ct *ConfigurationTree) GetSetting(path string) (value []byte, err error) {
+func (ct *ConfigurationTree) GetSetting(path string) (value *Setting, err error) {
 	for prefix, handler := range ct.SubtreeHandlers {
 		if !strings.HasPrefix(path, prefix) {
 			continue
@@ -85,7 +85,7 @@ func (ct *ConfigurationTree) GetSetting(path string) (value []byte, err error) {
 	return nil, &NonexistentNodeError{path}
 }
 
-func (ct *ConfigurationTree) SetSetting(path string, value []byte) (err error) {
+func (ct *ConfigurationTree) SetSetting(path string, value *Setting) (err error) {
 	for prefix, handler := range ct.SubtreeHandlers {
 		if !strings.HasPrefix(path, prefix) {
 			continue
