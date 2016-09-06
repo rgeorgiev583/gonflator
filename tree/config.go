@@ -22,7 +22,7 @@ type ConfigurationServer interface {
 
 type ConfigurationTree struct {
 	Prefix          string
-	SubtreeHandlers map[string]*ConfigurationTree
+	SubtreeHandlers map[string]ConfigurationServer
 }
 
 type NonexistentSubtreeHandlerError struct {
