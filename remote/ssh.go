@@ -49,10 +49,6 @@ func DialSSH(addr string, username string, keyFilename string) (conn *SSHConn, e
 	}
 
 	conn.Client, err = ssh.Dial("tcp", fmt.Sprintf("%s:22", addr), conn.Config)
-	if err != nil {
-		return
-	}
-
 	return
 }
 
