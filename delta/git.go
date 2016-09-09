@@ -1,5 +1,5 @@
 // git.go
-package translation
+package delta
 
 import (
 	"bitbucket.org/kardianos/rsync"
