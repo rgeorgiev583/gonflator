@@ -24,7 +24,7 @@ type Session struct {
 	Command string
 }
 
-type Variant interface {
+type Object interface {
 	Diff(target io.ReadSeeker) (<-chan Delta, error)
 	Patch(target io.WriteCloser, patch <-chan Delta) error
 }
