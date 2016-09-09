@@ -12,18 +12,7 @@ const (
 	sliceCap = 1000
 )
 
-type SyntheticRemote struct {
-	URL      url.URL
-	Protocol remote.Protocol
-}
-
-type SyntheticRemoteCollection map[string]*SyntheticRemote
-
-type GitRepository struct {
-	git2go.Repository
-	Tree             ConfigurationTree
-	SyntheticRemotes SyntheticRemoteCollection
-}
+type GitRepository git2go.Repository
 
 func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan Delta, err error) {
 	rdiff = make(chan Delta, chanCap)
@@ -126,7 +115,6 @@ func (gr *GitRepository) DiffRemote(ref *git2go.Reference, remoteName string) (t
 		return
 	}
 
-	remote, err := gr.SyntheticRemotes[remoteName]
 	if err != nil {
 		return
 	}
