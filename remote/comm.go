@@ -1,22 +1,5 @@
 package remote
 
-type DeltaProtocol int
-
-const (
-	None Protocol = iota
-	FUSE
-	Rsync
-	Git
-)
-
-type TargetProtocol int
-
-const (
-	None TargetProtocol = iota
-	SSH
-	Gonflated
-)
-
 type Socket struct {
 	Stdin  io.Reader
 	Stdout io.Writer

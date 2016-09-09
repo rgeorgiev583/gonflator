@@ -2,6 +2,15 @@ package delta
 
 import "io"
 
+type DeltaProtocol int
+
+const (
+	None Protocol = iota
+	FUSE
+	Rsync
+	Git
+)
+
 type DeltaType int
 
 const (
