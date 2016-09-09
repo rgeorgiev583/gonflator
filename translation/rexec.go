@@ -1,3 +1,6 @@
 package translation
 
-import "io"
+type Session struct {
+	Socket
+	Command string
+}

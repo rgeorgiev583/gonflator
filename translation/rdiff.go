@@ -19,11 +19,6 @@ type Delta struct {
 	Type             DeltaType
 }
 
-type Session struct {
-	Socket
-	Command string
-}
-
 type Object interface {
 	Diff(target io.ReadSeeker) (<-chan Delta, error)
 	Patch(target io.WriteCloser, patch <-chan Delta) error
