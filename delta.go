@@ -2,13 +2,12 @@ package delta
 
 import "io"
 
-type DeltaProtocol int
+type AgentType int
 
 const (
-	None Protocol = iota
+	None AgentType = iota
 	FUSE
-	Rsync
-	Git
+	Gonflator
 )
 
 type DeltaType int
