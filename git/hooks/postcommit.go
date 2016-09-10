@@ -6,6 +6,10 @@ import (
 	"github.com/rgeorgiev583/gonflator/translator"
 )
 
+type PostCommitHook interface {
+	TranslateRepoHead(target Translator, path string) (translatedRdiff <-chan Delta, err error)
+}
+
 func TranslateRepoHead(target Translator, path string) (translatedRdiff <-chan Delta, err error) {
 	if path == "" {
 		path = "."
