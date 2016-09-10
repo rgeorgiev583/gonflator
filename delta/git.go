@@ -93,7 +93,3 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 
 	return
 }
-
-func (gr *GitRepository) DiffReference(ref *git2go.Reference) (*git2go.Diff, error) {
-	return gr.DiffTreeToWorkdirWithIndex(ref.Target(), nil)
-}
