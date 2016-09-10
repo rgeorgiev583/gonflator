@@ -4,7 +4,7 @@ import (
 	"github.com/libgit2/git2go"
 )
 
-func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) <-chan git2go.DiffDelta {
+func (repo *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) <-chan git2go.DiffDelta {
 	diff := make(chan git2go.DiffDelta, chanCap)
 	callback := func(delta git2go.DiffDelta, _ float64) {
 		diff <- delta
@@ -16,7 +16,7 @@ func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) <-chan git2go.DiffD
 	return diff
 }
 
-func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) <-chan OptionalDelta {
+func (repo *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) <-chan OptionalDelta {
 	rdiff := make(chan OptionalDelta, chanCap)
 
 	go func() {
@@ -30,7 +30,7 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) <-chan OptionalD
 					Type:    DeltaUnmodified,
 				}}
 			case git2go.DeltaAdded:
-				blob, err := gr.LookupBlob(delta.NewFile.Oid)
+				blob, err := repo.LookupBlob(delta.NewFile.Oid)
 				if err != nil {
 					rdiff <- &OptionalDelta{Err: err}
 				} else {
@@ -46,13 +46,13 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) <-chan OptionalD
 					Type:    DeltaDeleted,
 				}}
 			case git2go.DeltaModified:
-				newBlob, err := gr.LookupBlob(delta.NewFile.Oid)
+				newBlob, err := repo.LookupBlob(delta.NewFile.Oid)
 				if err != nil {
 					rdiff <- &OptionalDelta{Err: err}
 					continue
 				}
 
-				oldBlob, err := gr.LookupBlob(delta.OldFile.Oid)
+				oldBlob, err := repo.LookupBlob(delta.OldFile.Oid)
 				if err != nil {
 					rdiff <- &OptionalDelta{Err: err}
 					continue
