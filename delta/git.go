@@ -14,6 +14,14 @@ const (
 
 type GitRepository git2go.Repository
 
+func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) (diff <-chan git2go.DiffDelta, err error) {
+	diff = make(chan git2go.DiffDelta)
+	callback := func(delta git2go.DiffDelta, _ float64) {
+		gitDiff <- delta
+	}
+	gitDiff.ForEach(callback, git2go.DiffDetailFiles)
+}
+
 func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan Delta, err error) {
 	rdiff = make(chan Delta, chanCap)
 
