@@ -13,8 +13,3 @@ const (
 )
 
 type GitRepository git2go.Repository
-
-type OptionalDelta struct {
-	Delta
-	Err error
-}
