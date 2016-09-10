@@ -6,8 +6,11 @@ import (
 	"github.com/rgeorgiev583/gonflator/translator"
 )
 
-func TranslateRepoHead(target Translator) (translatedRdiff <-chan Delta, err error) {
-	gitRepo, err := git2go.OpenRepository(".")
+func TranslateRepoHead(target Translator, path string) (translatedRdiff <-chan Delta, err error) {
+	if path == "" {
+		path = "."
+	}
+	gitRepo, err := git2go.OpenRepository(path)
 	if err != nil {
 		return
 	}
