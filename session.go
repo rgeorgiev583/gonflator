@@ -1,4 +1,4 @@
-package translation
+package session
 
 type Session struct {
 	Socket
