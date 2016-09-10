@@ -1,6 +1,6 @@
 package session
 
 type Session struct {
-	Socket
+	*Socket
 	Command string
 }
