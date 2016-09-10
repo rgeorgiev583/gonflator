@@ -38,5 +38,11 @@ func TranslateRepoHead(target Translator) (translatedRdiff <-chan Delta, err err
 		return
 	}
 
-	return target.TranslateRdiff(repo.GetRdiff(repo.GetDiffDeltas(diff)))
+	diff := repo.GetRdiff(repo.GetDiffDeltas(diff))
+
+	if target != nil {
+		return target.TranslateRdiff(diff)
+	} else {
+		return diff
+	}
 }
