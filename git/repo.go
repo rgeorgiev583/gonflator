@@ -1,5 +1,5 @@
-// git.go
-package delta
+// repo.go
+package git
 
 import (
 	"bitbucket.org/kardianos/rsync"
