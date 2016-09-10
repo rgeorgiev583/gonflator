@@ -7,14 +7,16 @@ import (
 	"bitbucket.org/kardianos/rsync/proto"
 )
 
-func getRsync() *rsync.RSync {
+const maxDataOp = 1024 * 16
+
+func createRsync() *rsync.RSync {
 	return &rsync.RSync{
-		MaxDataOp: 1024 * 16,
+		MaxDataOp: maxDataOp,
 	}
 }
 
 func signature(basis, signature string, blockSizeKiB int) error {
-	rs := getRsync()
+	rs := createRsync()
 	rs.BlockSize = 1024 * blockSizeKiB
 
 	basisFile, err := os.Open(basis)
@@ -41,7 +43,7 @@ func signature(basis, signature string, blockSizeKiB int) error {
 }
 
 func delta(signature, newfile, delta string, checkFile bool, comp proto.Comp) error {
-	rs := getRsync()
+	rs := createRsync()
 	sigFile, err := os.Open(signature)
 	if err != nil {
 		return err
@@ -106,7 +108,7 @@ func delta(signature, newfile, delta string, checkFile bool, comp proto.Comp) er
 }
 
 func patch(basis, delta, newfile string, checkFile bool) error {
-	rs := getRsync()
+	rs := createRsync()
 	basisFile, err := os.Open(basis)
 	if err != nil {
 		return err
