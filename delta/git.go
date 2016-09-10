@@ -19,7 +19,7 @@ type OptionalDelta struct {
 }
 
 func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) <-chan git2go.DiffDelta {
-	diff := make(chan git2go.DiffDelta)
+	diff := make(chan git2go.DiffDelta, chanCap)
 	callback := func(delta git2go.DiffDelta, _ float64) {
 		diff <- delta
 	}
