@@ -1,5 +1,5 @@
 // translator.go
-package translation
+package translator
 
 type TargetProtocol int
 
