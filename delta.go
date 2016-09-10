@@ -28,6 +28,11 @@ type Delta struct {
 	Type             DeltaType
 }
 
+type OptionalDelta struct {
+	Delta
+	Err error
+}
+
 type Object interface {
 	Diff(target io.ReadSeeker) (<-chan Delta, error)
 	Patch(target io.WriteCloser, patch <-chan Delta) error
