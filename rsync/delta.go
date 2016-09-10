@@ -1,6 +1,8 @@
 package rsync
 
 import (
+	"os"
+
 	"bitbucket.org/kardianos/rsync"
 	"bitbucket.org/kardianos/rsync/proto"
 )
