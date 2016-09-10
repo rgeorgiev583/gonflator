@@ -4,6 +4,11 @@ import (
 	"github.com/libgit2/git2go"
 )
 
+const (
+	chanCap  = 1000
+	sliceCap = 1000
+)
+
 func (repo *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) <-chan git2go.DiffDelta {
 	diff := make(chan git2go.DiffDelta, chanCap)
 	callback := func(delta git2go.DiffDelta, _ float64) {

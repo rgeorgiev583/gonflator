@@ -7,9 +7,4 @@ import (
 	"github.com/rgeorgiev583/gonflator/remote"
 )
 
-const (
-	chanCap  = 1000
-	sliceCap = 1000
-)
-
 type GitRepository git2go.Repository
