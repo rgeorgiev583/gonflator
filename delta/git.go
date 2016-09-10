@@ -13,6 +13,10 @@ const (
 )
 
 type GitRepository git2go.Repository
+type OptionalDelta struct {
+	Delta
+	Err error
+}
 
 func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) (diff <-chan git2go.DiffDelta, err error) {
 	diff = make(chan git2go.DiffDelta)
@@ -22,7 +26,7 @@ func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) (diff <-chan git2go
 	gitDiff.ForEach(callback, git2go.DiffDetailFiles)
 }
 
-func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan Delta, err error) {
+func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) rdiff <-chan OptionalDelta {
 	rdiff = make(chan Delta, chanCap)
 
 	go func() {
@@ -31,35 +35,37 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 		for delta := range diff {
 			switch delta.Status {
 			case git2go.DeltaUnmodified:
-				rdiff <- &Delta{
+				rdiff <- &OptionalDelta{Delta: {
 					NewPath: delta.NewFile.Path,
 					Type:    DeltaUnmodified,
-				}
+				}}
 			case git2go.DeltaAdded:
 				blob, err := gr.LookupBlob(delta.NewFile.Oid)
 				if err != nil {
-					return
-				}
-
-				rdiff <- &Delta{
-					Operation: &rsync.Operation{Data: blob.Contents()},
-					NewPath:   delta.NewFile.Path,
-					Type:      DeltaAdded,
+					rdiff <- &OptionalDelta{Err: err}
+				} else {
+					rdiff <- &OptionalDelta{Delta: {
+						Operation: &rsync.Operation{Data: blob.Contents()},
+						NewPath:   delta.NewFile.Path,
+						Type:      DeltaAdded,
+					}}
 				}
 			case git2go.DeltaDeleted:
-				rdiff <- &Delta{
+				rdiff <- &OptionalDelta{Delta: {
 					OldPath: delta.OldFile.Path,
 					Type:    DeltaDeleted,
-				}
+				}}
 			case git2go.DeltaModified:
 				newBlob, err := gr.LookupBlob(delta.NewFile.Oid)
 				if err != nil {
-					return
+					rdiff <- &OptionalDelta{Err: err}
+					continue
 				}
 
 				oldBlob, err := gr.LookupBlob(delta.OldFile.Oid)
 				if err != nil {
-					return
+					rdiff <- &OptionalDelta{Err: err}
+					continue
 				}
 
 				rdiffMaker := &rsync.Rsync{}
@@ -68,33 +74,34 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) (rdiff <-chan De
 				signature := new([]BlockHash, 0, sliceCapacity)
 				err = rsync.CreateSignature(oldReader, func(bh BlockHash) error {
 					append(signature, bh)
-					return nil
+					return
 				})
 				if err != nil {
-					return
+					rdiff <- &OptionalDelta{Err: err}
+					continue
 				}
 
 				err = rsync.CreateDelta(newReader, signature, func(op Operation) error {
-					rdiff <- &Delta{
+					rdiff <- &OptionalDelta{Delta: {
 						Operation: op,
 						OldPath:   delta.OldFile.Path,
 						NewPath:   delta.NewFile.Path,
 						Type:      DeltaModified,
-					}
-					return nil
+					}}
+					return
 				})
 			case git2go.DeltaRenamed:
-				rdiff <- &Delta{
+				rdiff <- &OptionalDelta{Delta: {
 					OldPath: delta.OldFile.Path,
 					NewPath: delta.NewFile.Path,
 					Type:    DeltaRenamed,
-				}
+				}}
 			case git2go.DeltaCopied:
-				rdiff <- &Delta{
+				rdiff <- &OptionalDelta{Delta: {
 					OldPath: delta.OldFile.Path,
 					Path:    delta.NewFile.Path,
 					Type:    DeltaCopied,
-				}
+				}}
 			}
 		}
 	}()
