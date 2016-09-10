@@ -18,8 +18,8 @@ type OptionalDelta struct {
 	Err error
 }
 
-func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) diff <-chan git2go.DiffDelta {
-	diff = make(chan git2go.DiffDelta)
+func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) <-chan git2go.DiffDelta {
+	diff := make(chan git2go.DiffDelta)
 	callback := func(delta git2go.DiffDelta, _ float64) {
 		diff <- delta
 	}
@@ -27,11 +27,11 @@ func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) diff <-chan git2go.
 		defer close(diff)
 		gitDiff.ForEach(callback, git2go.DiffDetailFiles)
 	}()
-	return
+	return diff
 }
 
-func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) rdiff <-chan OptionalDelta {
-	rdiff = make(chan Delta, chanCap)
+func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) <-chan OptionalDelta {
+	rdiff := make(chan Delta, chanCap)
 
 	go func() {
 		defer close(rdiff)
@@ -110,5 +110,5 @@ func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) rdiff <-chan Opt
 		}
 	}()
 
-	return
+	return rdiff
 }
