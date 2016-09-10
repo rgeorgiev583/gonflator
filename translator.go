@@ -5,8 +5,8 @@ type TargetProtocol int
 
 const (
 	None TargetProtocol = iota
+	Rsync
 	SSH
-	Gonflated
 )
 
 type Translator interface {
