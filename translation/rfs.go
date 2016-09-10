@@ -1,3 +1,0 @@
-package translation
-
-import "io"
