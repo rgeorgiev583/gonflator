@@ -23,7 +23,11 @@ func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) diff <-chan git2go.
 	callback := func(delta git2go.DiffDelta, _ float64) {
 		gitDiff <- delta
 	}
-	gitDiff.ForEach(callback, git2go.DiffDetailFiles)
+	go func() {
+		defer close(diff)
+		gitDiff.ForEach(callback, git2go.DiffDetailFiles)
+	}()
+	return
 }
 
 func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) rdiff <-chan OptionalDelta {
