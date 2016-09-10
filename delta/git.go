@@ -31,7 +31,7 @@ func (gr *GitRepository) GetDiffDeltas(gitDiff *git2go.Diff) <-chan git2go.DiffD
 }
 
 func (gr *GitRepository) GetRdiff(diff chan<- git2go.DiffDelta) <-chan OptionalDelta {
-	rdiff := make(chan Delta, chanCap)
+	rdiff := make(chan OptionalDelta, chanCap)
 
 	go func() {
 		defer close(rdiff)
