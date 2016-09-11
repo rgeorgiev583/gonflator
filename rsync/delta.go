@@ -1,6 +1,7 @@
 package rsync
 
 import (
+	"bytes"
 	"os"
 
 	"bitbucket.org/kardianos/rsync"
@@ -15,77 +16,61 @@ func createRsync() *rsync.RSync {
 	}
 }
 
-func signature(basis, signature string, blockSizeKiB int) error {
+func signature(basis string, blockSizeKiB int) (sigBuffer bytes.Buffer, err error) {
 	rs := createRsync()
 	rs.BlockSize = 1024 * blockSizeKiB
 
 	basisFile, err := os.Open(basis)
 	if err != nil {
-		return err
+		return
 	}
 	defer basisFile.Close()
 
-	sigFile, err := os.Create(signature)
-	if err != nil {
-		return err
-	}
-	defer sigFile.Close()
-
-	sigEncode := &proto.Writer{Writer: sigFile}
+	sigEncode := &proto.Writer{Writer: sigBuffer}
 
 	err = sigEncode.Header(proto.TypeSignature, proto.CompNone, rs.BlockSize)
 	if err != nil {
-		return err
+		return
 	}
 	defer sigEncode.Close()
 
-	return rs.CreateSignature(basisFile, sigEncode.SignatureWriter())
+	err = rs.CreateSignature(basisFile, sigEncode.SignatureWriter())
+	return
 }
 
-func delta(signature, newfile, delta string, checkFile bool, comp proto.Comp) error {
+func delta(sigBuffer bytes.Buffer, newfile string, checkFile bool, comp proto.Comp) (deltaBuffer bytes.Buffer, err error) {
 	rs := createRsync()
-	sigFile, err := os.Open(signature)
-	if err != nil {
-		return err
-	}
-	defer sigFile.Close()
 
 	nfFile, err := os.Open(newfile)
 	if err != nil {
-		return err
+		return
 	}
 	defer nfFile.Close()
 
-	deltaFile, err := os.Create(delta)
-	if err != nil {
-		return err
-	}
-	defer deltaFile.Close()
-
 	// Load signature hash list.
-	sigDecode := &proto.Reader{Reader: sigFile}
+	sigDecode := &proto.Reader{Reader: sigBuffer}
 	rs.BlockSize, err = sigDecode.Header(proto.TypeSignature)
 	if err != nil {
 		if err == io.EOF {
-			return io.ErrUnexpectedEOF
+			err = io.ErrUnexpectedEOF
 		}
-		return err
+		return
 	}
 	defer sigDecode.Close()
 
 	hl, err := sigDecode.ReadAllSignatures()
 	if err != nil {
-		return err
+		return
 	}
 	if *verbose {
 		fmt.Printf("Signature Count: %d\n", len(hl))
 	}
 
-	// Save operations to file.
-	opsEncode := &proto.Writer{Writer: deltaFile}
+	// Save operations to buffer.
+	opsEncode := &proto.Writer{Writer: deltaBuffer}
 	err = opsEncode.Header(proto.TypeDelta, comp, rs.BlockSize)
 	if err != nil {
-		return err
+		return
 	}
 	defer opsEncode.Close()
 
@@ -96,44 +81,38 @@ func delta(signature, newfile, delta string, checkFile bool, comp proto.Comp) er
 	opF := opsEncode.OperationWriter()
 	err = rs.CreateDelta(nfFile, hl, opF, hasher)
 	if err != nil {
-		return err
+		return
 	}
 	if checkFile {
-		return opF(rsync.Operation{
+		err = opF(rsync.Operation{
 			Type: rsync.OpHash,
 			Data: hasher.Sum(nil),
 		})
 	}
-	return nil
+	return
 }
 
-func patch(basis, delta, newfile string, checkFile bool) error {
+func patch(deltaBuffer bytes.Buffer, basis string, newfile string, checkFile bool) (err error) {
 	rs := createRsync()
 	basisFile, err := os.Open(basis)
 	if err != nil {
-		return err
+		return
 	}
 	defer basisFile.Close()
 
-	deltaFile, err := os.Open(delta)
-	if err != nil {
-		return err
-	}
-	defer deltaFile.Close()
-
 	fsFile, err := os.Create(newfile)
 	if err != nil {
-		return err
+		return
 	}
 	defer fsFile.Close()
 
-	deltaDecode := proto.Reader{Reader: deltaFile}
+	deltaDecode := proto.Reader{Reader: deltaBuffer}
 	rs.BlockSize, err = deltaDecode.Header(proto.TypeDelta)
 	if err != nil {
 		if err == io.EOF {
-			return io.ErrUnexpectedEOF
+			err = io.ErrUnexpectedEOF
 		}
-		return err
+		return
 	}
 	defer deltaDecode.Close()
 
@@ -152,21 +131,25 @@ func patch(basis, delta, newfile string, checkFile bool) error {
 	}
 	err = rs.ApplyDelta(fsFile, basisFile, ops, hasher)
 	if err != nil {
-		return err
+		return
 	}
 	if decodeError != nil {
-		return decodeError
+		err = decodeError
+		return
 	}
 	if checkFile == false {
-		return nil
+		err = nil
+		return
 	}
 	hashOp := <-hashOps
 	if hashOp.Data == nil {
-		return NoTargetSumError
+		err = NoTargetSumError
+		return
 	}
 	if bytes.Equal(hashOp.Data, hasher.Sum(nil)) == false {
-		return HashNoMatchError
+		err = HashNoMatchError
+		return
 	}
 
-	return nil
+	return
 }
