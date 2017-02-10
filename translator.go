@@ -3,6 +3,8 @@ package translator
 
 type TargetProtocol int
 
+type ShellType int
+
 const (
 	None TargetProtocol = iota
 	Rsync
@@ -10,6 +12,6 @@ const (
 )
 
 type Translator interface {
-	TranslateRdiff(rdiff chan<- Delta) (translatedRdiff <-chan Delta, err error)
-	TranslateRdiffToRexec(rdiff chan<- Delta) (session *Session, err error)
+	TranslateRdiff(rdiff chan<- Delta) translatedRdiff <-chan Delta
+	TranslateRdiffToSh(rdiff chan<- Delta) session <-chan Session
 }

@@ -7,23 +7,19 @@ import (
 	"github.com/rgeorgiev583/gonflator/translation"
 )
 
-type Configuration map[string]Setting
-
-type Setting struct {
-	Key   string
-	Value []byte
-}
+type Configuration map[string]string
 
 type ConfigurationServer interface {
 	GetConfiguration() Configuration
 	AppendToConfiguration(conf Configuration)
 	SetConfiguration(conf Configuration)
-	GetSetting(path string) (*Setting, error)
-	SetSetting(path string, value *Setting) error
+	GetSetting(path string) (string, error)
+	SetSetting(path string, value string) error
 }
 
 type ConfigurationTree struct {
 	Prefix          string
+	Translator      translation.Translator
 	SubtreeHandlers map[string]ConfigurationServer
 }
 
@@ -83,7 +79,7 @@ func (ct *ConfigurationTree) SetConfiguration(conf Configuration) (err error) {
 	return
 }
 
-func (ct *ConfigurationTree) GetSetting(path string) (value *Setting, err error) {
+func (ct *ConfigurationTree) GetSetting(path string) (value string, err error) {
 	for prefix, handler := range ct.SubtreeHandlers {
 		if !strings.HasPrefix(path, prefix) {
 			continue
@@ -99,7 +95,7 @@ func (ct *ConfigurationTree) GetSetting(path string) (value *Setting, err error)
 	return nil, &NonexistentNodeError{path}
 }
 
-func (ct *ConfigurationTree) SetSetting(path string, value *Setting) (err error) {
+func (ct *ConfigurationTree) SetSetting(path string, value string) (err error) {
 	for prefix, handler := range ct.SubtreeHandlers {
 		if !strings.HasPrefix(path, prefix) {
 			continue
@@ -115,8 +111,9 @@ func (ct *ConfigurationTree) SetSetting(path string, value *Setting) (err error)
 	return &NonexistentNodeError{path}
 }
 
-func (ct *ConfigurationTree) TranslateToRdiff(diff chan<- translation.Delta) (translatedDiff <-chan translation.Delta, err error) {
-	deltaHandlers := make(map[string]chan translation.Delta)
+func (ct *ConfigurationTree) TranslateRdiff(rdiff chan<- translation.Delta) (translatedRdiff <-chan translation.Delta, err error) {
+	deltaReceivers   := make(map[string]chan translation.Delta)
+	deltaTranslators := make(map[string]chan translation.Delta)
 	
 	go for delta := range diff {
 		for prefix, handler := range ct.SubtreeHandlers {
@@ -124,15 +121,23 @@ func (ct *ConfigurationTree) TranslateToRdiff(diff chan<- translation.Delta) (tr
 				continue
 			}
 
-			translatedDelta := handler.TranslateToRdiff()
-			if handler, ok := deltaHandlers[prefix]; ok {
-				deltaHandlers[prefix] <- 
+			if receiver, ok := deltaReceivers[prefix]; ok {
+				receiver <- <-diff
+			} else {
+				receiver = make(chan translation.Delta)
+				deltaReceivers[prefix] = receiver
+				translator, err := handler.Translator.TranslateToRdiff(receiver)
+				if err != nil {
+					break
+				}
 			}
-			
 
-			if err == nil {
-				return
-			}
+			break
+		}
+	}
+
+	for prefix, handler := range deltaHandlers {
+		go for delta := range handler {
 		}
 	}
 }
