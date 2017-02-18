@@ -44,7 +44,7 @@ func (bct *BufferedConfigurationTree) SetConfiguration(conf Configuration) (err 
 	return
 }
 
-func (bct *BufferedConfigurationTree) GetSetting(path string) (value *Setting, err error) {
+func (bct *BufferedConfigurationTree) GetSetting(path string) (value string, err error) {
 	value, err = bct.Configuration[path]
 	if err != nil {
 		value, err = ConfigurationTree.GetSetting(path)
@@ -52,7 +52,7 @@ func (bct *BufferedConfigurationTree) GetSetting(path string) (value *Setting, e
 	return
 }
 
-func (bct *BufferedConfigurationTree) SetSetting(path string, value *Setting) error {
+func (bct *BufferedConfigurationTree) SetSetting(path string, value string) error {
 	if len(bct.Configuration) == bct.Cap {
 		return bct.ConfigurationTree.SetSetting(path, value)
 	}

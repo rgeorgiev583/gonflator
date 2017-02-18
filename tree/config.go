@@ -7,23 +7,19 @@ import (
 	"github.com/rgeorgiev583/gonflator/translation"
 )
 
-type Configuration map[string]Setting
-
-type Setting struct {
-	Key   string
-	Value []byte
-}
+type Configuration map[string]string
 
 type ConfigurationServer interface {
-	GetConfiguration() Configuration
+	GetConfiguration() (Configuration, error)
 	AppendToConfiguration(conf Configuration)
-	SetConfiguration(conf Configuration)
-	GetSetting(path string) (*Setting, error)
-	SetSetting(path string, value *Setting) error
+	SetConfiguration(conf Configuration) error
+	GetSetting(path string) (string, error)
+	SetSetting(path string, value string) error
 }
 
 type ConfigurationTree struct {
 	Prefix          string
+	Server          ConfigurationServer
 	SubtreeHandlers map[string]ConfigurationServer
 }
 
@@ -59,13 +55,15 @@ func (nne *NonexistentNodeError) Error() string {
 	return fmt.Sprintf("configuration tree path %s does not refer to a valid tree or setting", nne.Path)
 }
 
-func (ct *ConfigurationTree) GetConfiguration() Configuration {
+func (ct *ConfigurationTree) GetConfiguration() (Configuration, error) {
 	conf := make(Configuration)
-	ct.AppendToConfiguration(conf)
-	return conf
+	err := ct.AppendToConfiguration(conf)
+	return conf, nil
 }
 
 func (ct *ConfigurationTree) AppendToConfiguration(conf Configuration) {
+	ConfigurationServer.AppendToConfiguration(conf)
+	
 	for prefix, handler := range ct.SubtreeHandlers {
 		for path, value := range handler.GetConfiguration() {
 			conf[fmt.Sprintf("%s/%s", prefix, path)] = value
@@ -74,6 +72,11 @@ func (ct *ConfigurationTree) AppendToConfiguration(conf Configuration) {
 }
 
 func (ct *ConfigurationTree) SetConfiguration(conf Configuration) (err error) {
+	err = ConfigurationServer.SetConfiguration(conf)
+	if err != nil {
+		return
+	}
+	
 	for path, value := range conf {
 		err = ct.SetSetting(path, value)
 		if err != nil {
@@ -83,14 +86,18 @@ func (ct *ConfigurationTree) SetConfiguration(conf Configuration) (err error) {
 	return
 }
 
-func (ct *ConfigurationTree) GetSetting(path string) (value *Setting, err error) {
+func (ct *ConfigurationTree) GetSetting(path string) (value string, err error) {
+	value, err = ConfigurationServer.GetSetting(path)
+	if err == nil {
+		return
+	}
+	
 	for prefix, handler := range ct.SubtreeHandlers {
 		if !strings.HasPrefix(path, prefix) {
 			continue
 		}
 
 		value, err = handler.GetSetting(strings.TrimPrefix(path, prefix))
-
 		if err == nil {
 			return
 		}
@@ -99,14 +106,18 @@ func (ct *ConfigurationTree) GetSetting(path string) (value *Setting, err error)
 	return nil, &NonexistentNodeError{path}
 }
 
-func (ct *ConfigurationTree) SetSetting(path string, value *Setting) (err error) {
+func (ct *ConfigurationTree) SetSetting(path string, value string) (err error) {
+	err = ConfigurationServer.SetSetting(path, value)
+	if err == nil {
+		return
+	}
+	
 	for prefix, handler := range ct.SubtreeHandlers {
 		if !strings.HasPrefix(path, prefix) {
 			continue
 		}
 
 		err = handler.SetSetting(strings.TrimPrefix(path, prefix), value)
-
 		if err == nil {
 			return
 		}
@@ -115,8 +126,10 @@ func (ct *ConfigurationTree) SetSetting(path string, value *Setting) (err error)
 	return &NonexistentNodeError{path}
 }
 
-func (ct *ConfigurationTree) TranslateToRdiff(diff chan<- translation.Delta) (translatedDiff <-chan translation.Delta, err error) {
-	deltaHandlers := make(map[string]chan translation.Delta)
+// TODO: incomplete, should probably be moved out of this file
+func (ct *ConfigurationTree) TranslateRdiff(rdiff chan<- translation.Delta) (translatedRdiff <-chan translation.Delta, err error) {
+	deltaReceivers   := make(map[string]chan translation.Delta)
+	deltaTranslators := make(map[string]chan translation.Delta)
 	
 	go for delta := range diff {
 		for prefix, handler := range ct.SubtreeHandlers {
@@ -124,15 +137,23 @@ func (ct *ConfigurationTree) TranslateToRdiff(diff chan<- translation.Delta) (tr
 				continue
 			}
 
-			translatedDelta := handler.TranslateToRdiff()
-			if handler, ok := deltaHandlers[prefix]; ok {
-				deltaHandlers[prefix] <- 
+			if receiver, ok := deltaReceivers[prefix]; ok {
+				receiver <- <-diff
+			} else {
+				receiver = make(chan translation.Delta)
+				deltaReceivers[prefix] = receiver
+				translator, err := handler.Translator.TranslateToRdiff(receiver)
+				if err != nil {
+					break
+				}
 			}
-			
 
-			if err == nil {
-				return
-			}
+			break
+		}
+	}
+
+	for prefix, handler := range deltaHandlers {
+		go for delta := range handler {
 		}
 	}
 }

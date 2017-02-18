@@ -16,7 +16,7 @@ func createRsync() *rsync.RSync {
 	}
 }
 
-func signature(basis string, blockSizeKiB int) (sigBuffer bytes.Buffer, err error) {
+func Signature(basis string, blockSizeKiB int) (sigBuffer bytes.Buffer, err error) {
 	rs := createRsync()
 	rs.BlockSize = 1024 * blockSizeKiB
 

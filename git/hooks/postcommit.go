@@ -6,11 +6,33 @@ import (
 	"github.com/rgeorgiev583/gonflator/translator"
 )
 
-type PostCommitHook interface {
-	TranslateRepoHead(target Translator, path string) (translatedRdiff <-chan Delta, err error)
+type DeltaType int
+
+const (
+	DeltaUnmodified DeltaType = iota
+	DeltaAdded
+	DeltaDeleted
+	DeltaModified
+	DeltaRenamed
+	DeltaCopied
+)
+
+type Delta struct {
+	rsync.Operation
+	OldPath, NewPath string
+	Type             DeltaType
 }
 
-func TranslateRepoHead(target Translator, path string) (translatedRdiff <-chan Delta, err error) {
+type OptionalDelta struct {
+	Delta
+	Err error
+}
+
+type PostCommitHook interface {
+	PushDiff(rdiff <-chan delta.Delta)
+}
+
+func (target Translator) TranslateRepoHead(path string) (translatedRdiff <-chan Delta, err error) {
 	if path == "" {
 		path = "."
 	}
@@ -48,8 +70,9 @@ func TranslateRepoHead(target Translator, path string) (translatedRdiff <-chan D
 	diff := repo.GetRdiff(repo.GetDiffDeltas(diff))
 
 	if target != nil {
-		return target.TranslateRdiff(diff)
+		translatedRdiff = target.TranslateRdiff(diff)
 	} else {
-		return diff
+		translatedRdiff = diff
 	}
+	return
 }

@@ -1,15 +1,15 @@
 // translator.go
 package translator
 
-type TargetProtocol int
-
-const (
-	None TargetProtocol = iota
-	Rsync
-	SSH
-)
+type Object interface {
+	Diff(target io.ReadSeeker) (<-chan Delta, error)
+	Patch(target io.WriteCloser, patch <-chan Delta) error
+}
 
 type Translator interface {
-	TranslateRdiff(rdiff chan<- Delta) (translatedRdiff <-chan Delta, err error)
-	TranslateRdiffToRexec(rdiff chan<- Delta) (session *Session, err error)
+	TranslateRdiff(rdiff chan<- Delta) translatedRdiff <-chan Delta
+}
+
+type Interpreter interface {
+	TranslateRdiffToSh(rdiff chan<- Delta) session <-chan Session
 }
