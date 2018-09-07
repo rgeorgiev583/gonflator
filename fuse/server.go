@@ -297,16 +297,6 @@ func (server *ConfigurationServer) Rename(oldName string, newName string, contex
 		return code
 	}
 
-	server.directoryCacheMutex.RLock()
-	_, ok := server.directoryCache[oldName]
-	server.directoryCacheMutex.RUnlock()
-	if ok {
-		server.directoryCacheMutex.Lock()
-		delete(server.directoryCache, oldName)
-		server.directoryCache[newName] = setValue{}
-		server.directoryCacheMutex.Unlock()
-	}
-
 	_, err := server.Provider.GetSetting(oldName)
 	if err != nil {
 		return getFuseErrorCode(err)
@@ -323,7 +313,7 @@ func (server *ConfigurationServer) Rename(oldName string, newName string, contex
 	}
 
 	server.directoryCacheMutex.RLock()
-	_, ok = server.directoryCache[oldName]
+	_, ok := server.directoryCache[oldName]
 	server.directoryCacheMutex.RUnlock()
 	if ok {
 		server.directoryCacheMutex.Lock()
