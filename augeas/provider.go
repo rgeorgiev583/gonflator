@@ -74,6 +74,10 @@ func (provider *ConfigurationProvider) Save() error {
 	return provider.aug.Save()
 }
 
+func (provider *ConfigurationProvider) Close() {
+	provider.aug.Close()
+}
+
 func NewConfigurationProvider(configRoot, loadPath string, flags augeas.Flag) (provider *ConfigurationProvider, err error) {
 	aug, err := augeas.New(configRoot, loadPath, flags)
 	if err != nil {

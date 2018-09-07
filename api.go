@@ -12,4 +12,5 @@ type ConfigurationProvider interface {
 	RemoveTree(path string) error
 	Load() error
 	Save() error
+	Close()
 }
