@@ -47,7 +47,6 @@ func (provider *ConfigurationProvider) ClearSetting(path string) error {
 func (provider *ConfigurationProvider) IsTree(path string) (res bool, err error) {
 	values, err := provider.ListSettings(path)
 	if err != nil {
-		res = false
 		return
 	}
 
