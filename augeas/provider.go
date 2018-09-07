@@ -45,7 +45,7 @@ func (provider *ConfigurationProvider) ClearSetting(path string) error {
 }
 
 func (provider *ConfigurationProvider) IsTree(path string) (res bool, err error) {
-	values, err := provider.ListSettings(path)
+	values, err := provider.aug.Match(getAugeasPath(path))
 	if err != nil {
 		return
 	}
