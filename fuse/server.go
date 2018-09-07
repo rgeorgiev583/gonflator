@@ -72,20 +72,6 @@ type ConfigurationServer struct {
 	Options  ConfigurationServerOptions
 }
 
-func (server *ConfigurationServer) isDir(name string) (res bool, err error) {
-	isTree, err := server.Provider.IsTree(name)
-	if err != nil {
-		return
-	}
-
-	if isTree {
-		res = true
-		return
-	}
-
-	return
-}
-
 func (server *ConfigurationServer) checkForWritePermissions(context *fuse.Context) fuse.Status {
 	if server.Options&ReadOnly != 0 {
 		return fuse.EROFS
@@ -159,7 +145,7 @@ func (server *ConfigurationServer) String() string {
 }
 
 func (server *ConfigurationServer) GetAttr(name string, context *fuse.Context) (attr *fuse.Attr, code fuse.Status) {
-	isDir, err := server.isDir(name)
+	isDir, err := server.Provider.IsTree(name)
 	if err != nil {
 		code = getFuseErrorCode(err)
 		return
@@ -184,7 +170,7 @@ func (server *ConfigurationServer) Truncate(name string, size uint64, context *f
 		return code
 	}
 
-	isDir, err := server.isDir(name)
+	isDir, err := server.Provider.IsTree(name)
 	if err != nil {
 		return getFuseErrorCode(err)
 	}
@@ -311,7 +297,7 @@ func (server *ConfigurationServer) Rmdir(name string, context *fuse.Context) fus
 		return code
 	}
 
-	isDir, err := server.isDir(name)
+	isDir, err := server.Provider.IsTree(name)
 	if err != nil {
 		return getFuseErrorCode(err)
 	}
@@ -336,7 +322,7 @@ func (server *ConfigurationServer) Unlink(name string, context *fuse.Context) fu
 		return code
 	}
 
-	isDir, err := server.isDir(name)
+	isDir, err := server.Provider.IsTree(name)
 	if err != nil {
 		return getFuseErrorCode(err)
 	}
@@ -399,7 +385,7 @@ func (server *ConfigurationServer) Create(name string, flags uint32, mode uint32
 }
 
 func (server *ConfigurationServer) OpenDir(name string, context *fuse.Context) (stream []fuse.DirEntry, code fuse.Status) {
-	isDir, err := server.isDir(name)
+	isDir, err := server.Provider.IsTree(name)
 	if err != nil {
 		code = getFuseErrorCode(err)
 		return
