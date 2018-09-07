@@ -67,6 +67,7 @@ type ConfigurationServerOptions uint
 
 type ConfigurationServer struct {
 	pathfs.FileSystem
+
 	Provider gonflator.ConfigurationProvider
 	Options  ConfigurationServerOptions
 

@@ -13,8 +13,9 @@ type fuseConfigurationSetting struct {
 	server  *ConfigurationServer
 	context *fuse.Context
 	flags   uint32
-	name    string
-	value   string
+
+	name  string
+	value string
 }
 
 func (setting *fuseConfigurationSetting) String() string {
