@@ -1,6 +1,6 @@
-// gonfs project doc.go
+// gonflator project doc.go
 
 /*
-gonfs document
+gonflator document
 */
-package gonfs
+package gonflator
