@@ -5,6 +5,7 @@ import (
 	"log"
 	"path"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
@@ -71,11 +72,15 @@ type ConfigurationServer struct {
 	Provider gonflator.ConfigurationProvider
 	Options  ConfigurationServerOptions
 
-	directoryCache map[string]setValue
+	directoryCacheMutex sync.RWMutex
+	directoryCache      map[string]setValue
 }
 
 func (server *ConfigurationServer) isDir(name string) (res bool, err error) {
-	if _, ok := server.directoryCache[name]; ok {
+	server.directoryCacheMutex.RLock()
+	_, ok := server.directoryCache[name]
+	server.directoryCacheMutex.RUnlock()
+	if ok {
 		res = true
 		return
 	}
@@ -250,7 +255,9 @@ func (server *ConfigurationServer) Mkdir(name string, mode uint32, context *fuse
 		return getFuseErrorCode(err)
 	}
 
+	server.directoryCacheMutex.Lock()
 	server.directoryCache[name] = setValue{}
+	server.directoryCacheMutex.Unlock()
 	return fuse.OK
 }
 
@@ -290,9 +297,14 @@ func (server *ConfigurationServer) Rename(oldName string, newName string, contex
 		return code
 	}
 
-	if _, ok := server.directoryCache[oldName]; ok {
+	server.directoryCacheMutex.RLock()
+	_, ok := server.directoryCache[oldName]
+	server.directoryCacheMutex.RUnlock()
+	if ok {
+		server.directoryCacheMutex.Lock()
 		delete(server.directoryCache, oldName)
 		server.directoryCache[newName] = setValue{}
+		server.directoryCacheMutex.Unlock()
 	}
 
 	_, err := server.Provider.GetSetting(oldName)
@@ -310,9 +322,14 @@ func (server *ConfigurationServer) Rename(oldName string, newName string, contex
 		return getFuseErrorCode(err)
 	}
 
-	if _, ok := server.directoryCache[oldName]; ok {
+	server.directoryCacheMutex.RLock()
+	_, ok = server.directoryCache[oldName]
+	server.directoryCacheMutex.RUnlock()
+	if ok {
+		server.directoryCacheMutex.Lock()
 		delete(server.directoryCache, oldName)
 		server.directoryCache[newName] = setValue{}
+		server.directoryCacheMutex.Unlock()
 	}
 
 	err = server.Provider.Save()
@@ -345,7 +362,9 @@ func (server *ConfigurationServer) Rmdir(name string, context *fuse.Context) fus
 		return fuse.Status(syscall.ENOTEMPTY)
 	}
 
+	server.directoryCacheMutex.Lock()
 	delete(server.directoryCache, name)
+	server.directoryCacheMutex.Unlock()
 	return fuse.OK
 }
 
