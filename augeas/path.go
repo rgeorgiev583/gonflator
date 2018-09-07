@@ -13,7 +13,7 @@ var bracketedIndexSurroundedBySlashesMatcher = regexp.MustCompile("/\\[(\\d+)\\]
 
 func getFilesystemPath(augeasPath string) string {
 	rewrittenPath := beginWithSlashMatcher.ReplaceAllLiteralString(augeasPath, "")
-	rewrittenPath = bracketedIndexMatcher.ReplaceAllString(rewrittenPath, "/$1")
+	rewrittenPath = bracketedIndexMatcher.ReplaceAllString(rewrittenPath, "/[$1]")
 	return filepath.Clean(rewrittenPath)
 }
 
