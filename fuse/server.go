@@ -5,7 +5,6 @@ import (
 	"log"
 	"path"
 	"path/filepath"
-	"sync"
 	"syscall"
 	"time"
 
@@ -71,20 +70,9 @@ type ConfigurationServer struct {
 
 	Provider gonflator.ConfigurationProvider
 	Options  ConfigurationServerOptions
-
-	directoryCacheMutex sync.RWMutex
-	directoryCache      map[string]setValue
 }
 
 func (server *ConfigurationServer) isDir(name string) (res bool, err error) {
-	server.directoryCacheMutex.RLock()
-	_, ok := server.directoryCache[name]
-	server.directoryCacheMutex.RUnlock()
-	if ok {
-		res = true
-		return
-	}
-
 	isTree, err := server.Provider.IsTree(name)
 	if err != nil {
 		return
@@ -255,9 +243,6 @@ func (server *ConfigurationServer) Mkdir(name string, mode uint32, context *fuse
 		return getFuseErrorCode(err)
 	}
 
-	server.directoryCacheMutex.Lock()
-	server.directoryCache[name] = setValue{}
-	server.directoryCacheMutex.Unlock()
 	return fuse.OK
 }
 
@@ -312,16 +297,6 @@ func (server *ConfigurationServer) Rename(oldName string, newName string, contex
 		return getFuseErrorCode(err)
 	}
 
-	server.directoryCacheMutex.RLock()
-	_, ok := server.directoryCache[oldName]
-	server.directoryCacheMutex.RUnlock()
-	if ok {
-		server.directoryCacheMutex.Lock()
-		delete(server.directoryCache, oldName)
-		server.directoryCache[newName] = setValue{}
-		server.directoryCacheMutex.Unlock()
-	}
-
 	err = server.Provider.Save()
 	if err != nil {
 		return getFuseErrorCode(err)
@@ -352,9 +327,6 @@ func (server *ConfigurationServer) Rmdir(name string, context *fuse.Context) fus
 		return fuse.Status(syscall.ENOTEMPTY)
 	}
 
-	server.directoryCacheMutex.Lock()
-	delete(server.directoryCache, name)
-	server.directoryCacheMutex.Unlock()
 	return fuse.OK
 }
 
