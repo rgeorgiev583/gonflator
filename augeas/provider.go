@@ -59,7 +59,7 @@ func (provider *ConfigurationProvider) MoveTree(sourcePath, destinationPath stri
 }
 
 func (provider *ConfigurationProvider) RemoveTree(path string) error {
-	if provider.aug.Remove(path) == 0 {
+	if provider.aug.Remove(getAugeasPath(path, true)) == 0 {
 		return &CouldNotRemoveTreeError{}
 	}
 
