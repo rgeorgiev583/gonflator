@@ -26,7 +26,7 @@ func getFilesystemPath(augeasPath string, isDir bool) string {
 
 func getAugeasPath(filesystemPath string, isDir bool) string {
 	rewrittenPath := bracketedIndexSurroundedBySlashesMatcher.ReplaceAllString(filesystemPath, "[$1]")
-	if isDir {
+	if !isDir {
 		rewrittenPath = treeValueNodeMatcher.ReplaceAllLiteralString(rewrittenPath, "/")
 	}
 	rewrittenPath = "/" + rewrittenPath
