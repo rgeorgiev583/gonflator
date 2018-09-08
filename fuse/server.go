@@ -404,7 +404,7 @@ func (server *ConfigurationServer) OpenDir(name string, context *fuse.Context) (
 	for _, entry := range entries {
 		mode := server.getMode(isDir)
 		baseName := path.Base(entry)
-		nameChecksum := adler32.Checksum([]byte(name))
+		nameChecksum := adler32.Checksum([]byte(entry))
 
 		dirEntry := fuse.DirEntry{
 			Mode: mode,
