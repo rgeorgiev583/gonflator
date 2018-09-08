@@ -23,7 +23,16 @@ func (provider *ConfigurationProvider) Name() string {
 }
 
 func (provider *ConfigurationProvider) ListSettings(path string) (values []string, err error) {
-	return provider.aug.Match(getAugeasPath(path, true) + "/*")
+	entries, err := provider.aug.Match(getAugeasPath(path, true) + "/*")
+	if err != nil {
+		return
+	}
+
+	values = append(values, getFilesystemPath(path, false))
+	for _, entry := range entries {
+		values = append(values, getFilesystemPath(entry, true))
+	}
+	return
 }
 
 func (provider *ConfigurationProvider) HasSetting(path string) (res bool, err error) {
