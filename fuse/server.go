@@ -401,8 +401,9 @@ func (server *ConfigurationServer) OpenDir(name string, context *fuse.Context) (
 		return
 	}
 
+	mode := server.getMode(isDir)
+
 	for _, entry := range entries {
-		mode := server.getMode(isDir)
 		baseName := path.Base(entry)
 		nameChecksum := adler32.Checksum([]byte(entry))
 
