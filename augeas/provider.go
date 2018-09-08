@@ -23,7 +23,7 @@ func (provider *ConfigurationProvider) Name() string {
 }
 
 func (provider *ConfigurationProvider) ListSettings(path string) (values []string, err error) {
-	return provider.aug.Match(getAugeasPath(path) + "/*")
+	return provider.aug.Match(getAugeasPath(path, true) + "/*")
 }
 
 func (provider *ConfigurationProvider) HasSetting(path string) (res bool, err error) {
@@ -33,19 +33,19 @@ func (provider *ConfigurationProvider) HasSetting(path string) (res bool, err er
 }
 
 func (provider *ConfigurationProvider) GetSetting(path string) (value string, err error) {
-	return provider.aug.Get(getAugeasPath(path))
+	return provider.aug.Get(getAugeasPath(path, false))
 }
 
 func (provider *ConfigurationProvider) SetSetting(path, value string) error {
-	return provider.aug.Set(getAugeasPath(path), value)
+	return provider.aug.Set(getAugeasPath(path, false), value)
 }
 
 func (provider *ConfigurationProvider) ClearSetting(path string) error {
-	return provider.aug.Clear(getAugeasPath(path))
+	return provider.aug.Clear(getAugeasPath(path, false))
 }
 
 func (provider *ConfigurationProvider) IsTree(path string) (res bool, err error) {
-	values, err := provider.aug.Match(getAugeasPath(path))
+	values, err := provider.aug.Match(getAugeasPath(path, true))
 	if err != nil {
 		return
 	}
@@ -55,7 +55,7 @@ func (provider *ConfigurationProvider) IsTree(path string) (res bool, err error)
 }
 
 func (provider *ConfigurationProvider) MoveTree(sourcePath, destinationPath string) error {
-	return provider.aug.Move(getAugeasPath(sourcePath), getAugeasPath(destinationPath))
+	return provider.aug.Move(getAugeasPath(sourcePath, true), getAugeasPath(destinationPath, true))
 }
 
 func (provider *ConfigurationProvider) RemoveTree(path string) error {
