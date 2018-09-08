@@ -85,21 +85,26 @@ func (server *ConfigurationServer) checkForWritePermissions(context *fuse.Contex
 }
 
 func (server *ConfigurationServer) checkThatParentExistsButNotSelf(name string) fuse.Status {
-	_, err := server.Provider.GetSetting(name)
-	if err == nil {
+	isDir, err := server.Provider.IsTree(name)
+	if err != nil {
+		return getFuseErrorCode(err)
+	}
+	if isDir {
 		return fuse.Status(syscall.EEXIST)
 	}
 
-	_, err = server.Provider.GetSetting(filepath.Dir(name))
+	isDir, err = server.Provider.IsTree(filepath.Dir(name))
 	if err != nil {
 		return getFuseErrorCode(err)
+	}
+	if !isDir {
+		return fuse.Status(fuse.ENOENT)
 	}
 
 	return fuse.OK
 }
 
 func (server *ConfigurationServer) getMode(isDir bool) (mode uint32) {
-	mode = syscall.S_IRUSR
 	if !(server.Options&ReadOnly != 0) {
 		mode |= syscall.S_IWUSR
 	}
@@ -201,11 +206,6 @@ func (server *ConfigurationServer) Access(name string, mode uint32, context *fus
 		return fuse.EROFS
 	}
 
-	_, err := server.Provider.GetSetting(name)
-	if err != nil {
-		return getFuseErrorCode(err)
-	}
-
 	if mode&fuse.X_OK != 0 {
 		return fuse.EACCES
 	}
@@ -224,7 +224,12 @@ func (server *ConfigurationServer) Mkdir(name string, mode uint32, context *fuse
 		return code
 	}
 
-	err := server.Provider.Save()
+	err := server.Provider.ClearSetting(name)
+	if err != nil {
+		return getFuseErrorCode(err)
+	}
+
+	err = server.Provider.Save()
 	if err != nil {
 		return getFuseErrorCode(err)
 	}
@@ -416,4 +421,11 @@ func (server *ConfigurationServer) OpenDir(name string, context *fuse.Context) (
 		stream = append(stream, dirEntry)
 	}
 	return
+}
+
+func NewConfigurationServer(provider gonflator.ConfigurationProvider, options ConfigurationServerOptions) *ConfigurationServer {
+	return &ConfigurationServer{
+		Provider: provider,
+		Options:  options,
+	}
 }

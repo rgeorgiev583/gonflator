@@ -85,7 +85,7 @@ func (setting *fuseConfigurationSetting) Truncate(size uint64) fuse.Status {
 }
 
 func (setting *fuseConfigurationSetting) GetAttr(out *fuse.Attr) fuse.Status {
-	isDir, err := setting.server.isDir(setting.name)
+	isDir, err := setting.server.Provider.IsTree(setting.name)
 	if err != nil {
 		return getFuseErrorCode(err)
 	}
