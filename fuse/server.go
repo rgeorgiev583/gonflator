@@ -357,6 +357,7 @@ func (server *ConfigurationServer) OnMount(nodeFs *pathfs.PathNodeFs) {
 
 func (server *ConfigurationServer) OnUnmount() {
 	err := server.Provider.Save()
+	server.Provider.Close()
 	if err != nil {
 		log.Println(err.Error())
 	}
