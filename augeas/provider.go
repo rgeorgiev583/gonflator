@@ -12,6 +12,18 @@ func (e *CouldNotRemoveTreeError) Error() string {
 	return "could not remove tree"
 }
 
+type IsDirectoryError struct{}
+
+func (e *IsDirectoryError) Error() string {
+	return "node is a directory"
+}
+
+type IsNotDirectoryError struct{}
+
+func (e *IsNotDirectoryError) Error() string {
+	return "node is not a directory"
+}
+
 type ConfigurationProvider struct {
 	gonflator.ConfigurationProvider
 
@@ -23,6 +35,10 @@ func (provider *ConfigurationProvider) Name() string {
 }
 
 func (provider *ConfigurationProvider) ListSettings(path string) (values []string, err error) {
+	if !isDirectory(path) {
+		return nil, &IsNotDirectoryError{}
+	}
+
 	entries, err := provider.aug.Match(getAugeasPath(path, true) + "/*")
 	if err != nil {
 		return
@@ -36,20 +52,34 @@ func (provider *ConfigurationProvider) ListSettings(path string) (values []strin
 }
 
 func (provider *ConfigurationProvider) HasSetting(path string) (res bool, err error) {
+	if isDirectory(path) {
+		err = &IsDirectoryError{}
+		return
+	}
 	_, err = provider.GetSetting(path)
 	res = err == nil
 	return
 }
 
 func (provider *ConfigurationProvider) GetSetting(path string) (value string, err error) {
+	if isDirectory(path) {
+		err = &IsDirectoryError{}
+		return
+	}
 	return provider.aug.Get(getAugeasPath(path, false))
 }
 
 func (provider *ConfigurationProvider) SetSetting(path, value string) error {
+	if isDirectory(path) {
+		return &IsDirectoryError{}
+	}
 	return provider.aug.Set(getAugeasPath(path, false), value)
 }
 
 func (provider *ConfigurationProvider) ClearSetting(path string) error {
+	if isDirectory(path) {
+		return &IsDirectoryError{}
+	}
 	return provider.aug.Clear(getAugeasPath(path, false))
 }
 
@@ -64,10 +94,18 @@ func (provider *ConfigurationProvider) IsTree(path string) (res bool, err error)
 }
 
 func (provider *ConfigurationProvider) MoveTree(sourcePath, destinationPath string) error {
+	if !isDirectory(sourcePath) || !isDirectory(destinationPath) {
+		return &IsNotDirectoryError{}
+	}
+
 	return provider.aug.Move(getAugeasPath(sourcePath, true), getAugeasPath(destinationPath, true))
 }
 
 func (provider *ConfigurationProvider) RemoveTree(path string) error {
+	if !isDirectory(path) {
+		return &IsNotDirectoryError{}
+	}
+
 	if provider.aug.Remove(getAugeasPath(path, true)) == 0 {
 		return &CouldNotRemoveTreeError{}
 	}
