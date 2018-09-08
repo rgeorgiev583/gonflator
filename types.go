@@ -55,3 +55,21 @@ func (err Error) Error() string {
 	return fmt.Sprintf("Message: %s - Minor message: %s - Details: %s",
 		err.Message, err.MinorMessage, err.Details)
 }
+
+type CouldNotRemoveTreeError struct{}
+
+func (e *CouldNotRemoveTreeError) Error() string {
+	return "could not remove tree"
+}
+
+type IsDirectoryError struct{}
+
+func (e *IsDirectoryError) Error() string {
+	return "node is a directory"
+}
+
+type IsNotDirectoryError struct{}
+
+func (e *IsNotDirectoryError) Error() string {
+	return "node is not a directory"
+}
